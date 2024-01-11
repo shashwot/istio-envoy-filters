@@ -1,0 +1,50 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: ingressgateway-gzip
+  namespace: istio-system
+spec:
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.compressor
+          typed_config:
+            '@type': type.googleapis.com/envoy.extensions.filters.http.compressor.v3.Compressor
+            compressor_library:
+              name: text_optimized
+              typed_config:
+                '@type': type.googleapis.com/envoy.extensions.compression.brotli.compressor.v3.Brotli
+                quality: 5
+                encoder_mode: DEFAULT
+                window_bits: 18
+                input_block_bits: 24
+                chunk_size: 4096
+            response_direction_config:
+              remove_accept_encoding_header: true
+              common_config:
+                enabled:
+                  default_value: true
+                  runtime_key: response_direction_config_enabled
+                content_type:
+                  - application/json
+                  - text/css
+                  - text/html
+                  - text/plain
+                  - text/xml
+                min_content_length: 800
+            request_direction_config:
+              common_config:
+                enabled:
+                  default_value: false
+                  runtime_key: request_direction_config_enabled```
+          
